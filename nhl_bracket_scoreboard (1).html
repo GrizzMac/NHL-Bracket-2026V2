@@ -1,0 +1,552 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>2026 Stanley Cup Bracket Challenge</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --navy:#0b1829;--navy2:#112238;--navy3:#1a3356;
+  --gold:#c8922a;--gold2:#f0b84a;--gold3:#fdf3dc;
+  --border:#1e3a5a;--card:#152d4a;--card2:#1a3560;
+  --text:#fff;--textm:rgba(255,255,255,.62);--textd:rgba(255,255,255,.32);
+  --green:#1a6e40;--red:#8a1a1a;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'DM Sans',sans-serif;background:var(--navy);color:var(--text);min-height:100vh}
+
+.hdr{background:var(--navy2);border-bottom:2px solid var(--gold);padding:1.2rem 1.5rem .9rem;text-align:center}
+.hdr h1{font-family:'Bebas Neue',sans-serif;font-size:clamp(1.8rem,5vw,3rem);color:var(--gold2);letter-spacing:.06em;line-height:1}
+.hdr-meta{font-size:.72rem;color:var(--textm);margin-top:.3rem;display:flex;align-items:center;justify-content:center;gap:8px;flex-wrap:wrap}
+.live-dot{width:7px;height:7px;border-radius:50%;background:#4caf50;display:inline-block;animation:pulse 2s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+.share-btn{display:inline-flex;align-items:center;gap:5px;padding:5px 13px;border-radius:20px;border:1px solid var(--gold);background:transparent;color:var(--gold2);font-family:'DM Sans',sans-serif;font-size:.72rem;font-weight:500;cursor:pointer;margin-top:.6rem}
+.share-btn:hover{background:var(--gold);color:var(--navy)}
+
+.main{max-width:1020px;margin:0 auto;padding:1.2rem 1rem 4rem}
+.tabs{display:flex;gap:3px;background:var(--navy2);border-radius:10px;padding:4px;margin-bottom:1.3rem;overflow-x:auto;scrollbar-width:none}
+.tabs::-webkit-scrollbar{display:none}
+.tab{flex-shrink:0;padding:7px 13px;border-radius:7px;border:none;background:transparent;color:var(--textm);font-family:'DM Sans',sans-serif;font-size:.78rem;font-weight:500;cursor:pointer;white-space:nowrap}
+.tab.active{background:var(--gold);color:var(--navy);font-weight:600}
+.pane{display:none}.pane.active{display:block}
+
+/* PODIUM */
+.podium{display:grid;grid-template-columns:repeat(3,1fr);gap:9px;margin-bottom:1.2rem}
+.pod{background:var(--card);border:1px solid var(--border);border-radius:11px;padding:12px 10px;text-align:center}
+.pod.gold-pod{border-color:var(--gold)}
+.pod-rank{font-size:.65rem;font-weight:600;color:var(--gold2);text-transform:uppercase;letter-spacing:.08em;margin-bottom:3px}
+.pod-name{font-size:.92rem;font-weight:600;margin-bottom:1px}
+.pod-pts{font-family:'Bebas Neue',sans-serif;font-size:2rem;color:var(--gold2);line-height:1}
+.pod-sub{font-size:.65rem;color:var(--textd)}
+
+/* STANDINGS */
+.card{background:var(--card);border:1px solid var(--border);border-radius:11px;overflow:hidden;margin-bottom:1rem}
+.card-hdr{padding:9px 13px;background:var(--navy3);font-size:.7rem;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--gold2);border-bottom:1px solid var(--border)}
+.stbl{width:100%;border-collapse:collapse}
+.stbl th{font-size:.65rem;font-weight:600;color:var(--textd);text-transform:uppercase;letter-spacing:.06em;padding:7px 13px;text-align:left;border-bottom:1px solid var(--border)}
+.stbl th.r,.stbl td.r{text-align:right}
+.stbl td{padding:8px 13px;border-bottom:1px solid rgba(30,58,90,.5);font-size:.82rem;vertical-align:middle}
+.stbl tr:last-child td{border-bottom:none}
+.stbl tr:hover td{background:rgba(255,255,255,.025)}
+.rank-n{font-size:.72rem;color:var(--textd);width:22px}
+.p-name{font-weight:600;font-size:.88rem;display:flex;align-items:center;gap:7px}
+.team-logo-sm{width:18px;height:18px;object-fit:contain;flex-shrink:0}
+.pts-n{font-family:'Bebas Neue',sans-serif;font-size:1.35rem;color:var(--gold2)}
+.bdg{display:inline-block;padding:2px 6px;border-radius:4px;font-size:.65rem;font-weight:600;margin-left:3px}
+.bdg-t{background:rgba(26,110,64,.3);color:#5de89a}
+.bdg-g{background:rgba(200,146,42,.2);color:var(--gold2)}
+.bdg-x{background:rgba(255,255,255,.07);color:var(--textd)}
+.expand-btn{background:none;border:none;color:var(--textd);cursor:pointer;font-size:.72rem;padding:2px 5px;border-radius:4px}
+.expand-btn:hover{color:var(--gold2)}
+.breakdown{display:none;padding:7px 13px 9px 36px;background:rgba(0,0,0,.18);border-bottom:1px solid var(--border)}
+.breakdown.open{display:block}
+.bk-row{display:flex;justify-content:space-between;font-size:.72rem;color:var(--textm);padding:2px 0}
+.legend{display:flex;flex-wrap:wrap;gap:9px;margin-top:9px;padding:9px 13px;background:var(--card);border:1px solid var(--border);border-radius:9px}
+.leg{display:flex;align-items:center;gap:5px;font-size:.72rem;color:var(--textm)}
+
+/* ── VISUAL BRACKET ── */
+.bracket-outer{overflow-x:auto;padding:1rem 0 1.5rem}
+.bracket-container{min-width:700px;display:grid;grid-template-columns:1fr 80px 1fr;gap:0;align-items:start}
+.conf-col{display:flex;flex-direction:column;gap:0}
+.conf-title{font-family:'Bebas Neue',sans-serif;font-size:1.1rem;color:var(--gold2);letter-spacing:.05em;text-align:center;padding:.5rem 0 .6rem;background:var(--navy3);border:1px solid var(--border);border-radius:8px 8px 0 0;margin-bottom:1px}
+.rounds-wrap{display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;padding:8px 6px}
+.round-col{display:flex;flex-direction:column;gap:6px}
+.round-title{font-size:.6rem;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--textd);text-align:center;margin-bottom:2px}
+
+/* SERIES CARD */
+.series-card{background:var(--card2);border:1px solid var(--border);border-radius:8px;overflow:hidden}
+.series-card.done-win{border-color:rgba(26,110,64,.6)}
+.series-team{display:flex;align-items:center;gap:7px;padding:6px 9px;border-bottom:1px solid var(--border)}
+.series-team:last-of-type{border-bottom:none}
+.series-team.winner-team{background:rgba(26,110,64,.15)}
+.series-team.loser-team{opacity:.45}
+.series-logo{width:22px;height:22px;object-fit:contain;flex-shrink:0}
+.series-name{font-size:.78rem;font-weight:500;flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.series-wins{font-family:'Bebas Neue',sans-serif;font-size:1rem;color:var(--gold2);min-width:10px;text-align:right}
+.series-status-bar{padding:3px 9px;font-size:.6rem;font-weight:600;letter-spacing:.06em;text-align:center;text-transform:uppercase}
+.status-live{background:rgba(200,146,42,.15);color:var(--gold2)}
+.status-done{background:rgba(26,110,64,.2);color:#5de89a}
+.status-upcoming{background:rgba(255,255,255,.04);color:var(--textd)}
+
+/* spacer rows for alignment */
+.bracket-spacer{flex:1}
+.r2-spacer{height:36px}
+.final-wrap{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:.5rem 0;gap:6px}
+.cup-icon{font-size:1.6rem;text-align:center}
+.cup-label{font-family:'Bebas Neue',sans-serif;font-size:.9rem;color:var(--gold2);letter-spacing:.05em;text-align:center}
+.tbd-box{background:var(--card);border:1px solid var(--border);border-radius:8px;padding:10px;text-align:center;font-size:.7rem;color:var(--textd);width:100%}
+
+/* INDIVIDUAL BRACKET */
+.b-conf-title{font-family:'Bebas Neue',sans-serif;font-size:.95rem;color:var(--gold2);letter-spacing:.05em;margin-bottom:6px}
+.b-round-label{font-size:.6rem;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:var(--textd);margin:8px 0 3px}
+.b-pick{display:flex;align-items:center;gap:7px;padding:5px 9px;border-radius:6px;border:1px solid var(--border);background:var(--card);margin-bottom:3px}
+.b-pick.winner-pick{background:var(--navy3);border-color:var(--gold)}
+.b-pick-logo{width:18px;height:18px;object-fit:contain;flex-shrink:0}
+.b-pick-name{font-size:.8rem;font-weight:500;flex:1}
+.b-pick-games{font-size:.7rem;color:var(--textd)}
+.b-cup{margin-top:12px;padding:10px 14px;border-radius:9px;background:var(--navy3);border:1px solid var(--gold);display:flex;align-items:center;gap:9px}
+.b-cup-logo{width:26px;height:26px;object-fit:contain}
+.b-cup-label{font-size:.62rem;color:var(--textd);text-transform:uppercase;letter-spacing:.07em}
+.b-cup-team{font-size:.92rem;font-weight:600;color:var(--gold2)}
+.b-cup-games{font-size:.75rem;color:var(--textm);margin-left:auto}
+.bracket-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+
+/* MODAL */
+.modal-bg{display:none;position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:100;align-items:center;justify-content:center}
+.modal-bg.open{display:flex}
+.modal{background:var(--navy2);border:1px solid var(--border);border-radius:13px;padding:1.4rem;max-width:460px;width:90%}
+.modal h3{font-family:'Bebas Neue',sans-serif;font-size:1.3rem;color:var(--gold2);margin-bottom:.7rem}
+.modal p{font-size:.8rem;color:var(--textm);margin-bottom:.7rem}
+.url-box{background:var(--navy);border:1px solid var(--border);border-radius:7px;padding:9px 11px;font-size:.7rem;color:var(--ice2,#c0d8ef);word-break:break-all;margin-bottom:.7rem;font-family:monospace;max-height:70px;overflow-y:auto}
+.modal-btns{display:flex;gap:7px}
+.modal-btn{flex:1;padding:8px;border-radius:7px;border:1px solid var(--border);background:transparent;color:var(--textm);font-family:'DM Sans',sans-serif;font-size:.78rem;cursor:pointer}
+.modal-btn.primary{background:var(--gold);border-color:var(--gold);color:var(--navy);font-weight:600}
+.copied-msg{font-size:.7rem;color:#5de89a;margin-top:5px;display:none}
+
+@media(max-width:500px){
+  .podium{grid-template-columns:1fr 1fr}.pod:first-child{grid-column:span 2}
+  .bracket-grid{grid-template-columns:1fr}
+}
+</style>
+</head>
+<body>
+
+<div class="hdr">
+  <h1>2026 Stanley Cup<br>Bracket Challenge</h1>
+  <div class="hdr-meta">
+    <span class="live-dot"></span>
+    <span id="last-updated">Loading live scores...</span>
+  </div>
+  <button class="share-btn" onclick="openShareModal('all')">
+    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
+    Share Scoreboard
+  </button>
+</div>
+
+<div class="main">
+  <div class="tabs" id="tabs">
+    <button class="tab active" onclick="switchTab('scoreboard',this)">Scoreboard</button>
+    <button class="tab" onclick="switchTab('bracket',this)">Live Bracket</button>
+    <button class="tab" onclick="switchTab('diana',this)">Diana</button>
+    <button class="tab" onclick="switchTab('scott',this)">Scott</button>
+    <button class="tab" onclick="switchTab('tom',this)">Tom</button>
+    <button class="tab" onclick="switchTab('george',this)">George</button>
+    <button class="tab" onclick="switchTab('murphy',this)">Murphy</button>
+    <button class="tab" onclick="switchTab('spensor',this)">Spensor</button>
+    <button class="tab" onclick="switchTab('dave',this)">Dave</button>
+  </div>
+  <div id="pane-scoreboard" class="pane active"></div>
+  <div id="pane-bracket" class="pane"></div>
+  <div id="pane-diana" class="pane"></div>
+  <div id="pane-scott" class="pane"></div>
+  <div id="pane-tom" class="pane"></div>
+  <div id="pane-george" class="pane"></div>
+  <div id="pane-murphy" class="pane"></div>
+  <div id="pane-spensor" class="pane"></div>
+  <div id="pane-dave" class="pane"></div>
+</div>
+
+<div class="modal-bg" id="share-modal">
+  <div class="modal">
+    <h3>Share this bracket</h3>
+    <p>Anyone with this link can view this page on their own device.</p>
+    <div class="url-box" id="share-url-box"></div>
+    <div class="modal-btns">
+      <button class="modal-btn" onclick="closeModal()">Close</button>
+      <button class="modal-btn primary" onclick="copyLink()">Copy Link</button>
+    </div>
+    <div class="copied-msg" id="copied-msg">Copied!</div>
+  </div>
+</div>
+
+<script>
+// ── TEAM LOGOS (NHL CDN abbreviations) ────────────────────────────────────────
+const LOGOS = {
+  "Buffalo Sabres":       "https://assets.nhle.com/logos/nhl/svg/BUF_light.svg",
+  "Boston Bruins":        "https://assets.nhle.com/logos/nhl/svg/BOS_light.svg",
+  "Tampa Bay Lightning":  "https://assets.nhle.com/logos/nhl/svg/TBL_light.svg",
+  "Montreal Canadiens":   "https://assets.nhle.com/logos/nhl/svg/MTL_light.svg",
+  "Carolina Hurricanes":  "https://assets.nhle.com/logos/nhl/svg/CAR_light.svg",
+  "Ottawa Senators":      "https://assets.nhle.com/logos/nhl/svg/OTT_light.svg",
+  "Pittsburgh Penguins":  "https://assets.nhle.com/logos/nhl/svg/PIT_light.svg",
+  "Philadelphia Flyers":  "https://assets.nhle.com/logos/nhl/svg/PHI_light.svg",
+  "Colorado Avalanche":   "https://assets.nhle.com/logos/nhl/svg/COL_light.svg",
+  "Los Angeles Kings":    "https://assets.nhle.com/logos/nhl/svg/LAK_light.svg",
+  "Dallas Stars":         "https://assets.nhle.com/logos/nhl/svg/DAL_light.svg",
+  "Minnesota Wild":       "https://assets.nhle.com/logos/nhl/svg/MIN_light.svg",
+  "Vegas Golden Knights": "https://assets.nhle.com/logos/nhl/svg/VGK_light.svg",
+  "Utah Mammoth":         "https://assets.nhle.com/logos/nhl/svg/UTA_light.svg",
+  "Edmonton Oilers":      "https://assets.nhle.com/logos/nhl/svg/EDM_light.svg",
+  "Anaheim Ducks":        "https://assets.nhle.com/logos/nhl/svg/ANA_light.svg",
+};
+
+function logo(team, size){ size=size||22; const u=LOGOS[team]; return u?`<img src="${u}" width="${size}" height="${size}" style="object-fit:contain;vertical-align:middle" onerror="this.style.display='none'">`:''; }
+
+// ── SHORT → FULL NAME MAP ─────────────────────────────────────────────────────
+const EXPAND = {
+  "Buffalo":"Buffalo Sabres","Boston":"Boston Bruins",
+  "Tampa Bay":"Tampa Bay Lightning","Montreal":"Montreal Canadiens",
+  "Carolina":"Carolina Hurricanes","Ottawa":"Ottawa Senators",
+  "Pittsburgh":"Pittsburgh Penguins","Philadelphia":"Philadelphia Flyers",
+  "Colorado":"Colorado Avalanche","LA":"Los Angeles Kings",
+  "Dallas":"Dallas Stars","Minnesota":"Minnesota Wild",
+  "Vegas":"Vegas Golden Knights","Utah":"Utah Mammoth",
+  "Edmonton":"Edmonton Oilers","Anaheim":"Anaheim Ducks",
+};
+const expand = s => EXPAND[s]||s;
+
+// ── BRACKET PICKS ────────────────────────────────────────────────────────────
+const PICKS = {
+  Diana:{
+    r1e:[["Buffalo","7"],["Tampa Bay","6"],["Carolina","6"],["Pittsburgh","7"]],
+    r2e:[["Buffalo","7"],["Carolina","6"]], fe:["Buffalo","7"],
+    r1w:[["Colorado","5"],["Dallas","7"],["Vegas","6"],["Edmonton","6"]],
+    r2w:[["Colorado","6"],["Edmonton","7"]], fw:["Colorado","7"],
+    cup:["Buffalo Sabres","6"]
+  },
+  Scott:{
+    r1e:[["Carolina","7"],["Pittsburgh","7"],["Buffalo","6"],["Montreal","5"]],
+    r2e:[["Carolina","7"],["Buffalo","6"]], fe:["Buffalo","6"],
+    r1w:[["Colorado","5"],["Minnesota","6"],["Vegas","5"],["Edmonton","7"]],
+    r2w:[["Colorado","6"],["Edmonton","6"]], fw:["Colorado","7"],
+    cup:["Colorado Avalanche","6"]
+  },
+  Tom:{
+    r1e:[["Carolina","6"],["Pittsburgh","7"],["Buffalo","5"],["Montreal","7"]],
+    r2e:[["Carolina","6"],["Montreal","6"]], fe:["Carolina","7"],
+    r1w:[["Colorado","5"],["Dallas","6"],["Vegas","7"],["Edmonton","5"]],
+    r2w:[["Colorado","5"],["Edmonton","6"]], fw:["Edmonton","6"],
+    cup:["Edmonton Oilers","7"]
+  },
+  George:{
+    r1e:[["Buffalo","7"],["Montreal","7"],["Ottawa","6"],["Pittsburgh","6"]],
+    r2e:[["Montreal","6"],["Buffalo","6"]], fe:["Montreal","7"],
+    r1w:[["Colorado","5"],["Minnesota","7"],["Vegas","6"],["Edmonton","5"]],
+    r2w:[["Colorado","6"],["Edmonton","7"]], fw:["Colorado","6"],
+    cup:["Colorado Avalanche","6"]
+  },
+  Murphy:{
+    r1e:[["Buffalo","6"],["Tampa Bay","7"],["Carolina","5"],["Pittsburgh","6"]],
+    r2e:[["Tampa Bay","6"],["Carolina","6"]], fe:["Carolina","6"],
+    r1w:[["Colorado","5"],["Dallas","7"],["Vegas","6"],["Edmonton","5"]],
+    r2w:[["Colorado","6"],["Edmonton","7"]], fw:["Colorado","7"],
+    cup:["Colorado Avalanche","6"]
+  },
+  Spensor:{
+    r1e:[["Boston","6"],["Tampa Bay","5"],["Ottawa","6"],["Pittsburgh","4"]],
+    r2e:[["Tampa Bay","4"],["Pittsburgh","4"]], fe:["Tampa Bay","5"],
+    r1w:[["Colorado","4"],["Minnesota","6"],["Vegas","6"],["Edmonton","5"]],
+    r2w:[["Colorado","5"],["Edmonton","6"]], fw:["Edmonton","6"],
+    cup:["Tampa Bay Lightning","5"]
+  },
+  Dave:{
+    r1e:[["Buffalo","5"],["Tampa Bay","6"],["Ottawa","6"],["Philadelphia","7"]],
+    r2e:[["Tampa Bay","7"],["Ottawa","6"]], fe:["Tampa Bay","5"],
+    r1w:[["Colorado","5"],["Minnesota","7"],["Vegas","6"],["Edmonton","6"]],
+    r2w:[["Colorado","7"],["Vegas","6"]], fw:["Colorado","5"],
+    cup:["Colorado Avalanche","7"]
+  }
+};
+
+// ── SERIES STATE (seeded from known results, updated live via API) ─────────────
+// done:true only when a team reaches 4 wins
+let SERIES = [
+  // EAST — correct R1 matchups
+  {id:"BUF-BOS", t1:"Buffalo Sabres",      t2:"Boston Bruins",         w1:0,w2:0, done:false, conf:"E"},
+  {id:"TB-MTL",  t1:"Tampa Bay Lightning", t2:"Montreal Canadiens",    w1:0,w2:0, done:false, conf:"E"},
+  {id:"CAR-OTT", t1:"Carolina Hurricanes", t2:"Ottawa Senators",       w1:1,w2:0, done:false, conf:"E"},
+  {id:"PIT-PHI", t1:"Pittsburgh Penguins", t2:"Philadelphia Flyers",   w1:0,w2:1, done:false, conf:"E"},
+  // WEST — correct R1 matchups
+  {id:"COL-LA",  t1:"Colorado Avalanche",  t2:"Los Angeles Kings",     w1:1,w2:0, done:false, conf:"W"},
+  {id:"DAL-MIN", t1:"Dallas Stars",        t2:"Minnesota Wild",        w1:0,w2:1, done:false, conf:"W"},
+  {id:"VGK-UTA", t1:"Vegas Golden Knights",t2:"Utah Mammoth",          w1:0,w2:0, done:false, conf:"W"},
+  {id:"EDM-ANA", t1:"Edmonton Oilers",     t2:"Anaheim Ducks",         w1:0,w2:0, done:false, conf:"W"},
+];
+
+// Lookup by team name
+const seriesByTeam = () => {
+  const m = {};
+  SERIES.forEach(s => { m[s.t1]=s; m[s.t2]=s; });
+  return m;
+};
+
+function seriesWinner(s){ return s.done ? (s.w1>s.w2?s.t1:s.t2) : null; }
+function seriesLeader(s){ if(s.w1>s.w2)return s.t1; if(s.w2>s.w1)return s.t2; return null; }
+function totalGames(s){ return s.w1+s.w2; }
+
+// ── LIVE SCORE FETCH via Anthropic API ────────────────────────────────────────
+// Uses Claude to parse the NHL schedule page and return current series records
+async function fetchLiveScores() {
+  try {
+    const res = await fetch("https://api.anthropic.com/v1/messages", {
+      method:"POST",
+      headers:{"Content-Type":"application/json"},
+      body: JSON.stringify({
+        model:"claude-sonnet-4-20250514",
+        max_tokens:1000,
+        system:`You are a sports data assistant. Return ONLY valid JSON, no markdown, no explanation.
+Given NHL playoff series, return the current win totals based on completed games.
+The 8 first-round series are:
+East: Buffalo vs Boston, Tampa Bay vs Montreal, Carolina vs Ottawa, Pittsburgh vs Philadelphia
+West: Colorado vs LA Kings, Dallas vs Minnesota, Vegas vs Utah Mammoth, Edmonton vs Anaheim
+Use the web_search tool to find current 2026 NHL playoff results, then return JSON like:
+{"series":[{"id":"BUF-BOS","w1":0,"w2":0,"done":false},...],"updated":"Apr 19 2026"}
+id values: BUF-BOS, TB-MTL, CAR-OTT, PIT-PHI, COL-LA, DAL-MIN, VGK-UTA, EDM-ANA
+w1=wins for first team listed, w2=wins for second team. done=true only when a team has 4 wins.`,
+        messages:[{role:"user",content:"Get the current 2026 NHL playoff first round series records right now."}],
+        tools:[{type:"web_search_20250305",name:"web_search"}]
+      })
+    });
+    const data = await res.json();
+    const text = data.content.map(b=>b.type==='text'?b.text:'').join('').trim();
+    const jsonStr = text.replace(/```json|```/g,'').trim();
+    const parsed = JSON.parse(jsonStr);
+    if (parsed.series) {
+      parsed.series.forEach(upd => {
+        const s = SERIES.find(x=>x.id===upd.id);
+        if (s) { s.w1=upd.w1; s.w2=upd.w2; s.done=upd.done||false; }
+      });
+      document.getElementById('last-updated').textContent = 'Live · updated ' + (parsed.updated||new Date().toLocaleTimeString());
+    }
+  } catch(e) {
+    document.getElementById('last-updated').textContent = 'Live data unavailable — showing latest known results';
+  }
+  renderAll();
+}
+
+// ── SCORING ───────────────────────────────────────────────────────────────────
+function scorePlayer(name) {
+  const p = PICKS[name];
+  const lookup = seriesByTeam();
+  let pts=0, tpts=0, gpts=0, breakdown=[];
+  const allR1 = p.r1e.concat(p.r1w);
+  allR1.forEach(([short, guessGames]) => {
+    const full = expand(short);
+    const s = lookup[full];
+    if (!s || !s.done) return;
+    const winner = seriesWinner(s);
+    if (winner === full) {
+      pts+=3; tpts+=3;
+      breakdown.push({label: full + " wins", type:"team"});
+    }
+    if (String(totalGames(s)) === guessGames) {
+      pts+=2; gpts+=2;
+      breakdown.push({label:"Correct games (" + guessGames + ")", type:"games"});
+    }
+  });
+  return {pts,tpts,gpts,breakdown};
+}
+
+// ── RENDER SCOREBOARD ─────────────────────────────────────────────────────────
+function renderScoreboard() {
+  const scores = Object.keys(PICKS).map(n=>({name:n,score:scorePlayer(n)}));
+  scores.sort((a,b)=>b.score.pts-a.score.pts);
+  const medals=["1st ★","2nd","3rd"];
+  const podHTML = `<div class="podium">${scores.slice(0,3).map((p,i)=>`
+    <div class="pod${i===0?' gold-pod':''}">
+      <div class="pod-rank">${medals[i]}</div>
+      <div class="pod-name">${p.name}</div>
+      <div class="pod-pts">${p.score.pts}</div>
+      <div class="pod-sub">points</div>
+    </div>`).join('')}</div>`;
+
+  const rows = scores.map((p,i)=>{
+    const s=p.score, did=`det-${p.name}`;
+    const bk = s.breakdown.length
+      ? s.breakdown.map(b=>`<div class="bk-row"><span>${b.label}</span><span class="bdg ${b.type==='team'?'bdg-t':'bdg-g'}">${b.type==='team'?'+3':'+2'}</span></div>`).join('')
+      : `<div class="bk-row" style="color:var(--textd)">Series still in progress — points awarded when complete</div>`;
+    return `<tr>
+      <td class="rank-n">${i+1}</td>
+      <td>
+        <div class="p-name">${p.name}
+          <button class="share-btn" style="padding:2px 9px;font-size:.65rem;margin-left:4px" onclick="openShareModal('${p.name.toLowerCase()}')">
+            <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
+          </button>
+        </div>
+        <div class="breakdown" id="${did}">${bk}</div>
+      </td>
+      <td class="r"><span class="pts-n">${s.pts}</span></td>
+      <td class="r">
+        ${s.tpts?`<span class="bdg bdg-t">+${s.tpts}</span>`:''}
+        ${s.gpts?`<span class="bdg bdg-g">+${s.gpts}</span>`:''}
+        ${!s.pts?`<span class="bdg bdg-x">—</span>`:''}
+      </td>
+      <td><button class="expand-btn" onclick="toggleBk('${did}',this)">▼</button></td>
+    </tr>`;
+  }).join('');
+
+  document.getElementById('pane-scoreboard').innerHTML = `${podHTML}
+    <div class="card">
+      <div class="card-hdr">Standings</div>
+      <table class="stbl">
+        <thead><tr><th>#</th><th>Player</th><th class="r">Pts</th><th class="r">Badges</th><th></th></tr></thead>
+        <tbody>${rows}</tbody>
+      </table>
+    </div>
+    <div class="legend">
+      <div class="leg"><span class="bdg bdg-t">+3</span> correct series winner</div>
+      <div class="leg"><span class="bdg bdg-g">+2</span> correct number of games</div>
+      <div class="leg" style="font-size:.68rem;color:var(--textd)">Points only awarded when a series officially ends</div>
+    </div>`;
+}
+
+// ── RENDER LIVE BRACKET ────────────────────────────────────────────────────────
+function seriesCardHTML(s) {
+  const leader = seriesLeader(s);
+  const winner = seriesWinner(s);
+  const t1win = winner===s.t1, t2win = winner===s.t2;
+  const t1class = t1win?'winner-team':(t2win?'loser-team':'');
+  const t2class = t2win?'winner-team':(t1win?'loser-team':'');
+  const started = s.w1+s.w2 > 0;
+  const statusText = s.done ? `Final · ${s.w1>s.w2?s.t1.split(' ').pop():s.t2.split(' ').pop()} wins` : started ? `Series ${s.w1}-${s.w2}` : 'Upcoming';
+  const statusClass = s.done?'status-done':started?'status-live':'status-upcoming';
+  return `<div class="series-card ${s.done?'done-win':''}">
+    <div class="series-team ${t1class}">
+      <span class="series-logo">${logo(s.t1,22)}</span>
+      <span class="series-name">${s.t1.split(' ').slice(-1)[0]}</span>
+      <span class="series-wins">${s.w1||''}</span>
+    </div>
+    <div class="series-team ${t2class}">
+      <span class="series-logo">${logo(s.t2,22)}</span>
+      <span class="series-name">${s.t2.split(' ').slice(-1)[0]}</span>
+      <span class="series-wins">${s.w2||''}</span>
+    </div>
+    <div class="series-status-bar ${statusClass}">${statusText}</div>
+  </div>`;
+}
+
+function renderBracketTab() {
+  const east = SERIES.filter(s=>s.conf==='E');
+  const west = SERIES.filter(s=>s.conf==='W');
+
+  const confHTML = (title, series) => `
+    <div style="background:var(--navy3);border:1px solid var(--border);border-radius:8px;overflow:hidden;margin-bottom:10px">
+      <div style="font-family:'Bebas Neue',sans-serif;font-size:1rem;color:var(--gold2);letter-spacing:.05em;text-align:center;padding:7px 0;border-bottom:1px solid var(--border)">${title}</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;padding:8px">
+        ${series.map(seriesCardHTML).join('')}
+      </div>
+    </div>`;
+
+  document.getElementById('pane-bracket').innerHTML = `
+    <div style="margin-bottom:6px;font-size:.72rem;color:var(--textd);text-align:center">Results update automatically · Series records shown in wins per team</div>
+    ${confHTML("Eastern Conference — Round 1", east)}
+    ${confHTML("Western Conference — Round 1", west)}
+    <div style="background:var(--card);border:1px solid var(--border);border-radius:8px;padding:16px;text-align:center;margin-top:6px">
+      <div style="font-size:.65rem;color:var(--textd);text-transform:uppercase;letter-spacing:.08em;margin-bottom:4px">Stanley Cup Final</div>
+      <div style="font-size:.82rem;color:var(--textm)">Round 2 onwards — to be determined</div>
+    </div>`;
+}
+
+// ── RENDER INDIVIDUAL BRACKET ─────────────────────────────────────────────────
+function renderPersonBracket(name) {
+  const p = PICKS[name];
+  const pane = document.getElementById('pane-'+name.toLowerCase());
+
+  const confBlock = (title, r1, r2, fin) => {
+    const r1h = r1.map(([t,g])=>`<div class="b-pick"><span class="b-pick-logo">${logo(expand(t),18)}</span><span class="b-pick-name">${t}</span><span class="b-pick-games">in ${g}</span></div>`).join('');
+    const r2h = r2.map(([t,g])=>`<div class="b-pick winner-pick"><span class="b-pick-logo">${logo(expand(t),18)}</span><span class="b-pick-name">${t}</span><span class="b-pick-games">in ${g}</span></div>`).join('');
+    return `<div>
+      <div class="b-conf-title">${title}</div>
+      <div class="b-round-label">Round 1</div>${r1h}
+      <div class="b-round-label">Round 2</div>${r2h}
+      <div class="b-round-label">Conference Final</div>
+      <div class="b-pick winner-pick"><span class="b-pick-logo">${logo(expand(fin[0]),18)}</span><span class="b-pick-name">${fin[0]}</span><span class="b-pick-games">in ${fin[1]}</span></div>
+    </div>`;
+  };
+
+  pane.innerHTML = `
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem;flex-wrap:wrap;gap:8px">
+      <div style="font-family:'Bebas Neue',sans-serif;font-size:1.5rem;color:var(--gold2)">${name}'s Bracket</div>
+      <button class="share-btn" onclick="openShareModal('${name.toLowerCase()}')">
+        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
+        Share ${name}'s Bracket
+      </button>
+    </div>
+    <div class="bracket-grid">
+      ${confBlock("Eastern Conference", p.r1e, p.r2e, p.fe)}
+      ${confBlock("Western Conference", p.r1w, p.r2w, p.fw)}
+    </div>
+    <div class="b-cup">
+      <div class="b-cup-logo">${logo(p.cup[0],26)}</div>
+      <div><div class="b-cup-label">Stanley Cup Pick</div><div class="b-cup-team">${p.cup[0]}</div></div>
+      <div class="b-cup-games">in ${p.cup[1]}</div>
+    </div>`;
+}
+
+// ── UTILITIES ─────────────────────────────────────────────────────────────────
+function renderAll(){
+  renderScoreboard();
+  renderBracketTab();
+  Object.keys(PICKS).forEach(renderPersonBracket);
+}
+
+function switchTab(id, btn){
+  document.querySelectorAll('.pane').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  document.getElementById('pane-'+id).classList.add('active');
+  if(btn) btn.classList.add('active');
+}
+
+function toggleBk(id, btn){
+  const el=document.getElementById(id);
+  el.classList.toggle('open');
+  btn.textContent=el.classList.contains('open')?'▲':'▼';
+}
+
+function getShareURL(target){
+  const base=window.location.href.split('?')[0].split('#')[0];
+  return base+(target==='all'?'?view=scoreboard':'?view='+encodeURIComponent(target));
+}
+function openShareModal(target){
+  document.getElementById('share-url-box').textContent=getShareURL(target);
+  document.getElementById('share-modal').classList.add('open');
+  document.getElementById('copied-msg').style.display='none';
+}
+function closeModal(){ document.getElementById('share-modal').classList.remove('open'); }
+function copyLink(){
+  navigator.clipboard.writeText(document.getElementById('share-url-box').textContent).then(()=>{
+    const m=document.getElementById('copied-msg'); m.style.display='block';
+    setTimeout(()=>m.style.display='none',2500);
+  });
+}
+document.getElementById('share-modal').addEventListener('click',function(e){ if(e.target===this)closeModal(); });
+
+function handleURLView(){
+  const view=new URLSearchParams(window.location.search).get('view');
+  if(!view) return;
+  const valid=['scoreboard','bracket','diana','scott','tom','george','murphy','spensor','dave'];
+  if(valid.includes(view)){
+    const btn=[...document.querySelectorAll('.tab')].find(t=>t.textContent.trim().toLowerCase().startsWith(view.charAt(0).toUpperCase()+view.slice(1).charAt(0))||t.getAttribute('onclick')?.includes("'"+view+"'"));
+    switchTab(view, btn||null);
+  }
+}
+
+// ── INIT ─────────────────────────────────────────────────────────────────────
+renderAll(); // render immediately with seeded data
+handleURLView();
+fetchLiveScores(); // then fetch live update
+setInterval(fetchLiveScores, 5*60*1000); // refresh every 5 minutes
+</script>
+</body>
+</html>
